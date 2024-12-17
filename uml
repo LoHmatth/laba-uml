@@ -1,0 +1,179 @@
+## Задачи по проектированию автопарка
+
+### UML Диаграмма классов
+
+Ниже представлена UML-диаграмма классов для системы учёта автопарка:
+
+```
++----------------+        +------------------+
+|    Vehicle     |<------>|     Driver       |
++----------------+        +------------------+
+| - id: Long     |        | - id: Long       |
+| - licensePlate: String  | - name: String   |
+| - type: VehicleType     | - category: String|
+| - lastServiceDate: Date | - workingHours: List<WorkingHour>|
+| - isAvailable: boolean   | + drive(vehicle: Vehicle) |
+| + service()              | + report()        |
+| + isServiceNeeded(): boolean |                |
+| + getInfo(): String      |                  |
++----------------+        +------------------+
+        ^
+        |
+        |
++-----------------+
+|   WorkingHour   |
++-----------------+
+| - startTime: LocalDateTime |
+| - endTime: LocalDateTime   |
+| - driver: Driver            |
+| - vehicle: Vehicle          |
+| - distance: Double          |
+| + calculateDuration(): Duration |
++-----------------+
+
++-------------------+
+|   VehicleType     |
++-------------------+
+| - name: String    |
+| - category: String |
++-------------------+
+```
+
+Описание классов
+
+1. **Vehicle**:
+   - **Поля**:
+     - `id`: уникальный идентификатор автомобиля.
+     - `licensePlate`: номерной знак автомобиля.
+     - `type`: тип автомобиля (легковой, грузовой и т.д.).
+     - `lastServiceDate`: дата последнего обслуживания.
+     - `isAvailable`: доступность автомобиля для использования.
+   - **Методы**:
+     - `service()`: обслуживает автомобиль.
+     - `isServiceNeeded()`: проверяет, требуется ли обслуживание.
+     - `getInfo()`: возвращает информацию об автомобиле.
+
+2. **Driver**:
+   - **Поля**:
+     - `id`: уникальный идентификатор водителя.
+     - `name`: имя водителя.
+     - `category`: категория прав водителя.
+     - `workingHours`: список рабочих часов водителя.
+   - **Методы**:
+     - `drive(vehicle: Vehicle)`: управляет автомобилем.
+     - `report()`: генерирует отчет о работе.
+
+3. **WorkingHour**:
+   - **Поля**:
+     - `startTime`: время начала работы.
+     - `endTime`: время окончания работы.
+     - `driver`: водитель, который управлял автомобилем.
+     - `vehicle`: автомобиль, который использовался.
+     - `distance`: пройденное расстояние.
+   - **Методы**:
+     - `calculateDuration()`: вычисляет продолжительность работы.
+
+4. **VehicleType**:
+   - **Поля**:
+     - `name`: название типа автомобиля.
+     - `category`: категория (например, легковые, грузовые).
+
+Реализация на Java с использованием JPA
+
+java
+import javax.persistence.*;
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Entity
+class Vehicle {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    
+    private String licensePlate;
+    
+    @ManyToOne
+    private VehicleType type;
+
+    private LocalDateTime lastServiceDate;
+    
+    private boolean isAvailable;
+
+    public void service() {
+        this.lastServiceDate = LocalDateTime.now();
+        this.isAvailable = true;
+    }
+
+    public boolean isServiceNeeded() {
+        // Логика проверки необходимости обслуживания
+        return false;
+    }
+
+    public String getInfo() {
+        return String.format("Vehicle %s (%s)", licensePlate, type.getName());
+    }
+}
+
+@Entity
+class Driver {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    
+    private String name;
+    
+    private String category;
+
+    @OneToMany(mappedBy = "driver")
+    private List<WorkingHour> workingHours;
+
+    public void drive(Vehicle vehicle) {
+        // Логика вождения
+    }
+
+    public String report() {
+        // Генерация отчета
+        return "";
+    }
+}
+
+@Entity
+class WorkingHour {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
+
+    @ManyToOne
+    private Driver driver;
+
+    @ManyToOne
+    private Vehicle vehicle;
+
+    private double distance;
+
+    public Duration calculateDuration() {
+        return Duration.between(startTime, endTime);
+    }
+}
+
+@Entity
+class VehicleType {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+    private String category;
+}
+
+
+Описание реализации
+
+1. **Аннотации JPA**: Используются аннотации `@Entity`, `@Id`, `@GeneratedValue` для указания, что классы являются сущностями и имеют автоинкрементные идентификаторы.
+2. **Связи между классами**: Используются аннотации `@ManyToOne` и `@OneToMany` для указания отношений между водителями, автомобилями и рабочими часами.
+3. **Методы классов**: Реализованы методы для обслуживания автомобилей, проверки необходимости обслуживания и генерации отчетов.
+
